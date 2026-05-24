@@ -1,1 +1,12 @@
-export { proxy as middleware, config } from "@/proxy";
+import { proxy } from "@/proxy";
+import type { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+  return proxy(request);
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icons|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
