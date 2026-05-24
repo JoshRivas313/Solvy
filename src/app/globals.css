@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* ── Brand — teal oscuro (texto "Solvy") ─────────────────── */
+    --color-brand-50:  240 249 252;
+    --color-brand-100: 204 237 245;
+    --color-brand-200: 153 215 234;
+    --color-brand-300: 88  186 216;
+    --color-brand-400: 44  158 193;
+    --color-brand-500: 30  158 179;
+    --color-brand-600: 24  126 144;
+    --color-brand-700: 19  99  113;
+    --color-brand-800: 15  74  85;
+    --color-brand-900: 27  75  106;
+    --color-brand-950: 10  38  54;
+
+    /* ── Primary — green del búho ────────────────────────────── */
+    --color-primary-50:  240 250 244;
+    --color-primary-100: 209 242 221;
+    --color-primary-200: 163 227 188;
+    --color-primary-300: 110 207 145;
+    --color-primary-400: 82  189 120;
+    --color-primary-500: 52  189 120;
+    --color-primary-600: 37  160 96;
+    --color-primary-700: 28  127 75;
+    --color-primary-800: 22  99  59;
+    --color-primary-900: 17  78  46;
+    --color-primary-950: 8   42  24;
+
+    /* ── Accent — amber del pico ─────────────────────────────── */
+    --color-accent-50:  255 251 235;
+    --color-accent-100: 254 243 199;
+    --color-accent-200: 253 230 138;
+    --color-accent-300: 252 211 77;
+    --color-accent-400: 245 166 35;
+    --color-accent-500: 234 138 10;
+    --color-accent-600: 180 100 5;
+
+    /* ── Neutral — fondos y textos ───────────────────────────── */
+    --color-neutral-50:  245 249 247;
+    --color-neutral-100: 235 242 238;
+    --color-neutral-200: 209 227 216;
+    --color-neutral-300: 173 204 184;
+    --color-neutral-400: 132 172 149;
+    --color-neutral-500: 100 140 115;
+    --color-neutral-600: 72  104 84;
+    --color-neutral-700: 55  79  64;
+    --color-neutral-800: 35  50  41;
+    --color-neutral-900: 18  28  22;
+
+    /* ── Semánticos ──────────────────────────────────────────── */
+    --color-bg:         245 249 247;
+    --color-surface:    255 255 255;
+    --color-border:     209 227 216;
+    --color-text:       18  28  22;
+    --color-text-muted: 100 140 115;
+    --color-ring:       52  189 120;
+
+    /* ── Categorías educativas ───────────────────────────────── */
+    --color-cat-saving:     52  189 120;
+    --color-cat-investing:  99  102 241;
+    --color-cat-risk:       245 158 11;
+    --color-cat-retirement: 236 72  153;
+    --color-cat-habits:     59  130 246;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-[rgb(var(--color-border))];
+  }
+
+  body {
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text));
+    font-family: "DM Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar invisible en mobile */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .font-mono-nums {
+    font-family: "DM Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Solvy — Tu camino financiero",
+  "short_name": "Solvy",
+  "description": "Plataforma que te guía para empezar a invertir según tu perfil",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F9F7",
+  "theme_color": "#34BD78",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ]
+}

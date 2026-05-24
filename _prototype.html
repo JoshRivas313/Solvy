@@ -1,0 +1,1263 @@
+import { useState, useMemo, useEffect } from "react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+Home, TrendingUp, BookOpen, Target, User, ChevronRight, Plus,
+ArrowLeft, LogOut, Edit2, Clock, Check, DollarSign,
+} from "lucide-react";
+
+// ═══════════════════════════════════════════════════════
+// SEED DATA
+// ═══════════════════════════════════════════════════════
+const RISK_RETURNS = { low: 5, medium: 7, high: 9 };
+
+const CAT_META = {
+saving: { label: "Ahorro", color: "#10B981" },
+investing: { label: "Inversión", color: "#6366F1" },
+risk: { label: "Riesgo", color: "#F59E0B" },
+retirement: { label: "Jubilación", color: "#EC4899" },
+habits: { label: "Hábitos", color: "#3B82F6" },
+};
+
+const LESSONS = [
+{
+id: "1", category: "investing", title: "El poder del interés compuesto",
+duration: 3, icon: "⚡",
+content: [
+{ type: "text", text: "El interés compuesto es cuando tus ganancias generan más ganancias. Es el principio más poderoso
+en las finanzas personales." },
+{ type: "key", text: "Si inviertes S/150 al mes desde los 25, a los 65 podrías tener más de S/400,000 con una tasa del
+7% anual." },
+{ type: "text", text: "La clave es el tiempo. Cada año sin invertir es potencial perdido. No necesitas mucho dinero —
+necesitas empezar pronto." },
+],
+quiz: {
+question: "¿Por qué el tiempo es tan importante al invertir?",
+options: [
+{ text: "Porque los precios siempre suben con el tiempo", correct: false },
+{ text: "Porque tus ganancias generan más ganancias exponencialmente", correct: true },
+{ text: "Porque el banco te da más intereses si llevas más años", correct: false },
+],
+explanation: "El interés compuesto crece de forma exponencial. Por eso empezar hoy vale más que duplicar el monto en 10
+años.",
+},
+},
+{
+id: "2", category: "risk", title: "¿Qué es el riesgo en inversiones?",
+duration: 4, icon: "🛡️",
+content: [
+{ type: "text", text: "El riesgo es la posibilidad de que tu inversión valga menos de lo esperado. No es malo — es parte
+del proceso." },
+{ type: "key", text: "Mayor riesgo = Mayor retorno potencial. Menor riesgo = Mayor estabilidad. Tú decides según tu
+situación." },
+{ type: "text", text: "La solución es diversificar: no poner todos los huevos en una canasta. Y el tiempo: las
+inversiones de largo plazo se recuperan." },
+],
+quiz: {
+question: "¿Cuál es la mejor forma de reducir el riesgo de una inversión?",
+options: [
+{ text: "No invertir y guardar el dinero en efectivo", correct: false },
+{ text: "Diversificar: invertir en diferentes tipos de activos", correct: true },
+{ text: "Invertir todo en el activo más seguro", correct: false },
+],
+explanation: "Diversificar significa no depender de una sola inversión. Si una baja, las otras pueden compensar.",
+},
+},
+{
+id: "3", category: "saving", title: "Tu fondo de emergencia primero",
+duration: 3, icon: "🏦",
+content: [
+{ type: "text", text: "Antes de invertir, necesitas un fondo de emergencia. Es dinero líquido para imprevistos: trabajo
+perdido, salud, familia." },
+{ type: "key", text: "El estándar es tener entre 3 y 6 meses de gastos mensuales en una cuenta de ahorros accesible." },
+{ type: "text", text: "Sin este colchón, cualquier emergencia te obligaría a vender inversiones en el peor momento." },
+],
+quiz: {
+question: "¿Cuántos meses de gastos necesitas como fondo de emergencia?",
+options: [
+{ text: "1 mes es suficiente", correct: false },
+{ text: "Entre 3 y 6 meses de gastos", correct: true },
+{ text: "Más de 12 meses para estar seguro", correct: false },
+],
+explanation: "3 a 6 meses es el rango ideal. Suficiente para cubrir imprevistos sin tener demasiado dinero inactivo.",
+},
+},
+{
+id: "4", category: "retirement", title: "Jubilación: el concepto real",
+duration: 4, icon: "🌅",
+content: [
+{ type: "text", text: "Jubilarse no es solo dejar de trabajar. Es alcanzar la libertad financiera: que tu dinero trabaje
+por ti." },
+{ type: "key", text: "Regla del 4%: si retiras el 4% de tu capital al año, tu fondo puede durar 30+ años. Con S/500k
+podrías retirar S/20k anuales." },
+{ type: "text", text: "Para jubilarte necesitas un capital que genere suficiente para cubrir tus gastos sin agotarse."
+},
+],
+quiz: {
+question: "Según la Regla del 4%, ¿cuánto podrías retirar anualmente de S/300,000?",
+options: [
+{ text: "S/30,000 al año", correct: false },
+{ text: "S/12,000 al año", correct: true },
+{ text: "S/60,000 al año", correct: false },
+],
+explanation: "El 4% de S/300,000 es S/12,000 anuales (S/1,000 al mes). Un buen punto de referencia para calcular tu
+meta.",
+},
+},
+{
+id: "5", category: "habits", title: "Automatiza tu ahorro",
+duration: 3, icon: "🔄",
+content: [
+{ type: "text", text: "El secreto de quien ahorra consistentemente no es disciplina extraordinaria — es automatización."
+},
+{ type: "key", text: "Al recibir tu ingreso, transfiere automáticamente un % a tu cuenta de ahorro antes de gastar
+nada." },
+{ type: "text", text: "Empieza con el 10% de lo que ganas. Con el tiempo ajusta hacia arriba. La consistencia vence al
+monto." },
+],
+quiz: {
+question: "¿Cuál es la estrategia más efectiva para ahorrar consistentemente?",
+options: [
+{ text: "Guardar lo que sobra a fin de mes", correct: false },
+{ text: "Automatizar una transferencia al inicio del mes", correct: true },
+{ text: "Hacer un presupuesto detallado de todos los gastos", correct: false },
+],
+explanation: "Lo que automatizas, lo cumples. Ahorrar 'lo que sobra' casi nunca funciona.",
+},
+},
+];
+
+// ═══════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════
+const fmt = (n) => `S/${Math.round(n).toLocaleString("es-PE")}`;
+const fmtCompact = (n) =>
+n >= 1000000 ? `S/${(n / 1000000).toFixed(1)}M` :
+n >= 1000 ? `S/${Math.round(n / 1000)}k` : fmt(n);
+
+function calcProjection(monthly, currentAge, retirementAge, annualReturn) {
+const months = Math.max(0, (retirementAge - currentAge) * 12);
+const r = annualReturn / 100 / 12;
+if (r === 0 || months === 0) return monthly * months;
+return monthly * ((Math.pow(1 + r, months) - 1) / r);
+}
+
+function getChartData(monthly, currentAge, retirementAge, annualReturn) {
+const r = annualReturn / 100 / 12;
+const span = retirementAge - currentAge;
+const step = Math.max(1, Math.floor(span / 8));
+const data = [];
+for (let age = currentAge; age <= retirementAge; age +=step) { const months=(age - currentAge) * 12; const amount=r===0
+  ? monthly * months : monthly * ((Math.pow(1 + r, months) - 1) / r); data.push({ age: `${age}a`, amount:
+  Math.round(amount) }); } return data; } function getMotivation(total, monthly) { if (total>= 500000) return
+  `¡Increíble! Con ${fmt(monthly)}/mes podrías alcanzar ${fmtCompact(total)} al retiro.`;
+  if (total >= 200000) return `Con ${fmt(monthly)}/mes acumularías ${fmtCompact(total)}. Un retiro digno está a tu
+  alcance.`;
+  if (total >= 50000) return `Con ${fmt(monthly)}/mes llegarías a ${fmtCompact(total)}. ¡Un gran comienzo!`;
+  return `Con ${fmt(monthly)}/mes ya estás construyendo tu futuro. Cada sol cuenta.`;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // UI ATOMS
+  // ═══════════════════════════════════════════════════════
+  function Btn({ children, onClick, variant = "primary", size = "md", fullWidth, disabled, className = "" }) {
+  const base = "rounded-2xl font-semibold transition-all active:scale-95 flex items-center justify-center gap-2
+  cursor-pointer border-0 outline-none";
+  const sz = { sm: "px-4 py-2 text-sm", md: "px-5 py-3 text-base", lg: "px-6 py-4 text-base" };
+  const vars = {
+  primary: "bg-emerald-500 text-white hover:bg-emerald-600",
+  secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
+  ghost: "bg-transparent text-slate-500 hover:bg-slate-100",
+  danger: "bg-red-50 text-red-600 hover:bg-red-100",
+  };
+  return (
+  <button onClick={onClick} disabled={disabled} className={`${base} ${sz[size]} ${vars[variant]} ${fullWidth ? "w-full"
+    : "" } ${disabled ? "opacity-40 cursor-not-allowed" : "" } ${className}`}>
+    {children}
+  </button>
+  );
+  }
+
+  function Field({ label, type = "text", value, onChange, placeholder, prefix }) {
+  return (
+  <div className="flex flex-col gap-1">
+    {label && <label className="text-sm font-semibold text-slate-500">{label}</label>}
+    <div
+      className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 h-14 gap-2 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+      {prefix && <span className="text-slate-400 text-sm font-medium">{prefix}</span>}
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+        className="flex-1 bg-transparent outline-none text-slate-800 font-medium text-base" style={{ color: "#1e293b"
+        }} />
+    </div>
+  </div>
+  );
+  }
+
+  function Bar({ value, color = "#10B981", h = 6 }) {
+  return (
+  <div className="w-full bg-slate-100 rounded-full overflow-hidden" style={{ height: h }}>
+    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(0,
+      value))}%`, background: color }} />
+  </div>
+  );
+  }
+
+  function Badge({ children, color }) {
+  return (
+  <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${color}18`, color }}>
+    {children}
+  </span>
+  );
+  }
+
+  function Card({ children, className = "", onClick }) {
+  return (
+  <div onClick={onClick} className={`bg-white rounded-3xl p-5 border border-slate-100 shadow-sm ${onClick
+    ? "cursor-pointer active:scale-[0.98] transition-transform" : "" } ${className}`}>
+    {children}
+  </div>
+  );
+  }
+
+  function EmptyState({ icon, title, desc, cta, onCta }) {
+  return (
+  <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+    <div className="text-5xl mb-4">{icon}</div>
+    <h3 className="text-lg font-bold text-slate-700 mb-2">{title}</h3>
+    <p className="text-sm text-slate-400 mb-6 leading-relaxed">{desc}</p>
+    {cta && <Btn onClick={onCta} size="sm">{cta}</Btn>}
+  </div>
+  );
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // LAYOUT COMPONENTS
+  // ═══════════════════════════════════════════════════════
+  function TopBar({ title, back, onBack, right }) {
+  return (
+  <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-slate-100 sticky top-0 z-10">
+    <div className="flex items-center gap-3">
+      {back && (
+      <button onClick={onBack} className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center">
+        <ArrowLeft size={18} className="text-slate-600" />
+      </button>
+      )}
+      <h1 className="text-lg font-bold text-slate-800">{title}</h1>
+    </div>
+    {right}
+  </div>
+  );
+  }
+
+  function BottomNav({ active, onChange }) {
+  const tabs = [
+  { id: "dashboard", Icon: Home, label: "Inicio" },
+  { id: "simulator", Icon: TrendingUp, label: "Simular" },
+  { id: "education", Icon: BookOpen, label: "Aprender" },
+  { id: "goals", Icon: Target, label: "Metas" },
+  { id: "profile", Icon: User, label: "Perfil" },
+  ];
+  return (
+  <div
+    className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white border-t border-slate-100 flex z-20">
+    {tabs.map(({ id, Icon, label }) => (
+    <button key={id} onClick={()=> onChange(id)}
+      className={`flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors ${active === id ? "text-emerald-600"
+      : "text-slate-300"}`}
+      >
+      <Icon size={22} strokeWidth={active===id ? 2.5 : 1.8} />
+      <span className="text-xs font-bold" style={{ fontSize: 10 }}>{label}</span>
+      {active === id &&
+      <div className="w-1 h-1 rounded-full bg-emerald-500" />}
+    </button>
+    ))}
+  </div>
+  );
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SPLASH
+  // ═══════════════════════════════════════════════════════
+  function Splash({ onLogin, onRegister }) {
+  return (
+  <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(160deg,#0b1f18,#0d3022,#0a1c14)" }}>
+    <div className="flex-1 flex flex-col items-center justify-center px-8">
+      <div className="w-20 h-20 rounded-3xl bg-emerald-500 flex items-center justify-center mb-6 shadow-xl">
+        <span style={{ fontSize: 36 }}>🪺</span>
+      </div>
+      <h1 className="text-5xl font-bold text-white mb-2" style={{ letterSpacing: "-1.5px" }}>Nido</h1>
+      <p className="text-emerald-400 font-semibold text-lg mb-2">Tu futuro empieza hoy.</p>
+      <p className="text-slate-400 text-center text-sm leading-relaxed max-w-xs mt-1">
+        Aprende a invertir, simula tu jubilación y construye tu patrimonio desde S/50 al mes.
+      </p>
+      <div className="flex gap-8 mt-10 rounded-3xl px-8 py-5" style={{ background: "rgba(255,255,255,0.05)" ,
+        border: "1px solid rgba(255,255,255,0.08)" }}>
+        {[["18-30", "años"], ["S/50", "para empezar"], ["7%", "retorno est."]].map(([v, l]) => (
+        <div key={l} className="flex flex-col items-center">
+          <span className="text-emerald-400 font-bold text-xl font-mono">{v}</span>
+          <span className="text-slate-500 text-xs mt-0.5">{l}</span>
+        </div>
+        ))}
+      </div>
+    </div>
+    <div className="px-6 pb-12 flex flex-col gap-3">
+      <button onClick={onRegister}
+        className="w-full py-4 rounded-2xl bg-emerald-500 text-white font-bold text-base active:scale-95 transition-all"
+        style={{ boxShadow: "0 8px 24px rgba(16,185,129,.35)" }}>
+        Empezar gratis
+      </button>
+      <button onClick={onLogin}
+        className="w-full py-4 rounded-2xl text-white font-semibold active:scale-95 transition-all" style={{
+        border: "1px solid rgba(255,255,255,.2)" }}>
+        Ya tengo una cuenta
+      </button>
+    </div>
+  </div>
+  );
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // AUTH
+  // ═══════════════════════════════════════════════════════
+  function Auth({ mode, onSuccess, onSwitch, onBack }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
+  const isLogin = mode === "login";
+
+  const handle = () => {
+  if (!email || !pwd || (!isLogin && !name)) { setErr("Completa todos los campos."); return; }
+  if (pwd.length < 6) { setErr("La contraseña debe tener al menos 6 caracteres."); return; } setLoading(true);
+    setErr(""); setTimeout(()=> { setLoading(false); onSuccess({ email, name: name || email.split("@")[0] }); }, 900);
+    };
+
+    return (
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="px-5 pt-5">
+        <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
+          <ArrowLeft size={18} className="text-slate-600" />
+        </button>
+      </div>
+      <div className="flex-1 flex flex-col px-6 pt-8">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center mb-6">
+          <span style={{ fontSize: 22 }}>🪺</span>
+        </div>
+        <img src="/images/Logo_Imagen.jpeg" alt="LogoImagen" />
+        <h2 className="text-3xl font-bold text-slate-800 mb-1" style={{ letterSpacing: "-0.5px" }}>
+          {isLogin ? "Bienvenido de vuelta" : "Crea tu cuenta"}
+        </h2>
+        <p className="text-slate-400 mb-8 text-sm">
+          {isLogin ? "Inicia sesión para continuar." : "Empieza a construir tu futuro."}
+        </p>
+        <div className="flex flex-col gap-4">
+          {!isLogin && <Field label="Nombre completo" value={name} onChange={e=> setName(e.target.value)}
+            placeholder="¿Cómo te llamas?" />}
+            <Field label="Correo electrónico" type="email" value={email} onChange={e=> setEmail(e.target.value)}
+              placeholder="tu@correo.com" />
+              <Field label="Contraseña" type="password" value={pwd} onChange={e=> setPwd(e.target.value)}
+                placeholder="Mínimo 6 caracteres" />
+        </div>
+        {err && <p className="text-red-500 text-sm mt-3">{err}</p>}
+        <Btn onClick={handle} fullWidth className="mt-6" disabled={loading}>
+          {loading ? "Cargando..." : isLogin ? "Iniciar sesión" : "Crear cuenta"}
+        </Btn>
+        <button onClick={onSwitch} className="text-center text-sm text-slate-400 mt-4 py-2">
+          {isLogin ? "¿No tienes cuenta? " : "¿Ya tienes cuenta? "}
+          <span className="text-emerald-600 font-bold">{isLogin ? "Regístrate" : "Inicia sesión"}</span>
+        </button>
+      </div>
+    </div>
+    );
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ONBOARDING
+    // ═══════════════════════════════════════════════════════
+    function Onboarding({ onComplete }) {
+    const [step, setStep] = useState(0);
+    const [d, setD] = useState({ age: 25, income: 1500, savings: 200, knowledge: "beginner", risk: "medium" });
+    const steps = ["Edad", "Ingresos", "Ahorro", "Conocimiento", "Riesgo"];
+    const pct = ((step + 1) / steps.length) * 100;
+
+    const next = () => step < steps.length - 1 ? setStep(s=> s + 1) : onComplete(d);
+      const prev = () => setStep(s => s - 1);
+
+      return (
+      <div className="min-h-screen bg-white flex flex-col">
+        {/* Progress header */}
+        <div className="px-5 pt-5 flex items-center gap-3">
+          {step > 0 && (
+          <button onClick={prev}
+            className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
+            <ArrowLeft size={18} className="text-slate-600" />
+          </button>
+          )}
+          <div className="flex-1">
+            <div className="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Paso {step + 1} de {steps.length}</span>
+              <span>{Math.round(pct)}%</span>
+            </div>
+            <Bar value={pct} />
+          </div>
+        </div>
+
+        <div className="flex-1 px-6 pt-10 flex flex-col">
+          {/* STEP 0 — Age */}
+          {step === 0 && <>
+            <h2 className="text-2xl font-bold text-slate-800 mb-1">¿Cuántos años tienes?</h2>
+            <p className="text-slate-400 text-sm mb-10">Tu edad define cuánto tiempo tienes para construir tu futuro.
+            </p>
+            <div className="text-center py-6">
+              <span className="font-bold text-emerald-500 font-mono" style={{ fontSize: 88 }}>{d.age}</span>
+              <span className="text-slate-400 ml-2" style={{ fontSize: 28 }}>años</span>
+            </div>
+            <input type="range" min={18} max={30} value={d.age} onChange={e=> setD(x => ({ ...x, age: +e.target.value
+            }))}
+            className="w-full mt-6" style={{ accentColor: "#10B981" }} />
+            <div className="flex justify-between text-xs text-slate-300 mt-1"><span>18</span><span>30</span></div>
+          </>}
+
+          {/* STEP 1 — Income */}
+          {step === 1 && <>
+            <h2 className="text-2xl font-bold text-slate-800 mb-1">¿Cuánto ganas al mes?</h2>
+            <p className="text-slate-400 text-sm mb-8">Aproximado. Nos ayuda a sugerirte un aporte realista.</p>
+            <Field label="Ingreso mensual" prefix="S/" type="number" value={d.income} onChange={e=> setD(x => ({ ...x,
+              income: +e.target.value }))} placeholder="1500" />
+              <div className="flex gap-2 flex-wrap mt-4">
+                {[500, 1000, 1500, 2500, 4000].map(v => (
+                <button key={v} onClick={()=> setD(x => ({ ...x, income: v }))}
+                  className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${d.income === v ?
+                  "bg-emerald-500 text-white border-emerald-500" : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                  S/{v.toLocaleString()}
+                </button>
+                ))}
+              </div>
+          </>}
+
+          {/* STEP 2 — Savings */}
+          {step === 2 && <>
+            <h2 className="text-2xl font-bold text-slate-800 mb-1">¿Cuánto podrías ahorrar?</h2>
+            <p className="text-slate-400 text-sm mb-8">No tiene que ser mucho. Lo importante es empezar.</p>
+            <Field label="Aporte mensual posible" prefix="S/" type="number" value={d.savings} onChange={e=> setD(x => ({
+              ...x, savings: +e.target.value }))} placeholder="200" />
+              {d.income > 0 && (
+              <div className="mt-3 bg-emerald-50 rounded-2xl p-3 border border-emerald-100">
+                <p className="text-emerald-700 text-sm">
+                  💡 Eso es el {Math.round((d.savings / d.income) * 100)}% de tu ingreso. El mínimo recomendado es el
+                  10%.
+                </p>
+              </div>
+              )}
+              <div className="flex gap-2 flex-wrap mt-4">
+                {[50, 100, 200, 400, 800].map(v => (
+                <button key={v} onClick={()=> setD(x => ({ ...x, savings: v }))}
+                  className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${d.savings === v ?
+                  "bg-emerald-500 text-white border-emerald-500" : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                  S/{v}
+                </button>
+                ))}
+              </div>
+          </>}
+
+          {/* STEP 3 — Knowledge */}
+          {step === 3 && <>
+            <h2 className="text-2xl font-bold text-slate-800 mb-1">¿Cuánto sabes de inversiones?</h2>
+            <p className="text-slate-400 text-sm mb-8">Sé honesto. Aquí no hay respuestas incorrectas.</p>
+            <div className="flex flex-col gap-3">
+              {[
+              { id: "beginner", label: "Principiante", desc: "Nunca he invertido ni sé mucho del tema", icon: "🌱" },
+              { id: "intermediate", label: "Intermedio", desc: "Tengo nociones básicas y algo de experiencia", icon:
+              "📈" },
+              { id: "advanced", label: "Avanzado", desc: "Entiendo instrumentos financieros y ya invierto", icon: "🚀"
+              },
+              ].map(o => (
+              <button key={o.id} onClick={()=> setD(x => ({ ...x, knowledge: o.id }))}
+                className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${d.knowledge ===
+                o.id ? "border-emerald-500 bg-emerald-50" : "border-slate-100 bg-slate-50"}`}>
+                <span style={{ fontSize: 24 }}>{o.icon}</span>
+                <div>
+                  <p className={`font-bold text-sm ${d.knowledge===o.id ? "text-emerald-700" : "text-slate-700" }`}>
+                    {o.label}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{o.desc}</p>
+                </div>
+              </button>
+              ))}
+            </div>
+          </>}
+
+          {/* STEP 4 — Risk */}
+          {step === 4 && <>
+            <h2 className="text-2xl font-bold text-slate-800 mb-1">¿Cómo te sientes con el riesgo?</h2>
+            <p className="text-slate-400 text-sm mb-8">Define el retorno estimado en tus simulaciones.</p>
+            <div className="flex flex-col gap-3">
+              {[
+              { id: "low", label: "Conservador", desc: "Prefiero seguridad sobre ganancias (5% est.)", icon: "🛡️" },
+              { id: "medium", label: "Moderado", desc: "Acepto variación por mejores retornos (7% est.)", icon: "⚖️" },
+              { id: "high", label: "Agresivo", desc: "Busco máximo crecimiento y acepto volatilidad (9% est.)", icon:
+              "🔥" },
+              ].map(o => (
+              <button key={o.id} onClick={()=> setD(x => ({ ...x, risk: o.id }))}
+                className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${d.risk === o.id
+                ? "border-emerald-500 bg-emerald-50" : "border-slate-100 bg-slate-50"}`}>
+                <span style={{ fontSize: 24 }}>{o.icon}</span>
+                <div>
+                  <p className={`font-bold text-sm ${d.risk===o.id ? "text-emerald-700" : "text-slate-700" }`}>{o.label}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">{o.desc}</p>
+                </div>
+              </button>
+              ))}
+            </div>
+          </>}
+
+          <div className="flex-1" />
+        </div>
+
+        <div className="px-6 pb-10 pt-4">
+          <Btn onClick={next} fullWidth size="lg">
+            {step === steps.length - 1 ? "Ver mi simulación 🎉" : "Continuar →"}
+          </Btn>
+        </div>
+      </div>
+      );
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // DASHBOARD
+      // ═══════════════════════════════════════════════════════
+      function Dashboard({ profile, contributions, onNav }) {
+      const annualReturn = RISK_RETURNS[profile.risk];
+      const projected = calcProjection(profile.savings, profile.age, 65, annualReturn);
+      const totalContribs = contributions.reduce((s, c) => s + c.amount, 0);
+      const pct = projected > 0 ? Math.min(100, (totalContribs / projected) * 100) : 0;
+
+      const tips = [
+      "💡 Aumentar tu aporte en S/50 puede sumar más de S/30,000 al retiro.",
+      "📚 Completa tu primera lección para entender el interés compuesto.",
+      "🎯 Cada mes que ahorras hoy vale más que dos meses dentro de 10 años.",
+      "⏱️ El mejor momento para empezar fue ayer. El segundo mejor es hoy.",
+      ];
+
+      return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        {/* Header */}
+        <div className="px-5 pt-6 pb-3">
+          <p className="text-slate-400 text-sm">Hola,</p>
+          <h1 className="text-2xl font-bold text-slate-800">
+            {profile.name} 👋
+          </h1>
+        </div>
+
+        {/* Retirement hero card */}
+        <div className="mx-5 mb-4 rounded-3xl overflow-hidden" style={{
+          background: "linear-gradient(135deg,#064e3b,#065f46,#047857)" }}>
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider">Meta de jubilación</p>
+                <p className="text-emerald-400 text-xs mt-0.5">A los 65 años · {annualReturn}% anual est.</p>
+              </div>
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{
+                background: "rgba(255,255,255,.1)" }}>
+                <span style={{ fontSize: 20 }}>🪺</span>
+              </div>
+            </div>
+            <p className="text-white font-bold text-4xl mb-0.5 font-mono">{fmtCompact(projected)}</p>
+            <p className="text-emerald-300 text-sm">aportando {fmt(profile.savings)}/mes</p>
+            <div className="mt-5">
+              <div className="flex justify-between text-xs text-emerald-300 mb-2">
+                <span>Progreso acumulado</span>
+                <span>{pct.toFixed(1)}%</span>
+              </div>
+              <div className="w-full rounded-full h-2" style={{ background: "rgba(255,255,255,.15)" }}>
+                <div className="bg-emerald-400 h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex justify-between text-xs text-emerald-400 mt-1.5">
+                <span>{fmtCompact(totalContribs)} acumulados</span>
+                <span>Meta: {fmtCompact(projected)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="flex gap-3 mx-5 mb-4">
+          {[
+          { label: "Simular", icon: "📊", tab: "simulator", bg: "bg-indigo-50", text: "text-indigo-700" },
+          { label: "Aprender", icon: "📖", tab: "education", bg: "bg-amber-50", text: "text-amber-700" },
+          { label: "Metas", icon: "🎯", tab: "goals", bg: "bg-pink-50", text: "text-pink-700" },
+          ].map(({ label, icon, tab, bg, text }) => (
+          <button key={tab} onClick={()=> onNav(tab)}
+            className={`flex-1 ${bg} rounded-2xl py-4 flex flex-col items-center gap-1.5 active:scale-95
+            transition-transform`}>
+            <span style={{ fontSize: 24 }}>{icon}</span>
+            <span className={`text-xs font-bold ${text}`}>{label}</span>
+          </button>
+          ))}
+        </div>
+
+        {/* Stats row */}
+        <div className="flex gap-3 mx-5 mb-4">
+          <Card className="flex-1 !p-4">
+            <p className="text-xs text-slate-400 mb-1">Aporte mensual</p>
+            <p className="font-bold text-slate-800 text-lg font-mono">{fmt(profile.savings)}</p>
+          </Card>
+          <Card className="flex-1 !p-4">
+            <p className="text-xs text-slate-400 mb-1">Años al retiro</p>
+            <p className="font-bold text-slate-800 text-lg font-mono">{65 - profile.age}</p>
+          </Card>
+        </div>
+
+        {/* Tip of the day */}
+        <div className="mx-5 mb-4 bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+          <p className="text-emerald-800 text-sm leading-relaxed">{tips[profile.age % tips.length]}</p>
+        </div>
+
+        <div className="h-24" />
+      </div>
+      );
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // SIMULATOR
+      // ═══════════════════════════════════════════════════════
+      function Simulator({ profile }) {
+      const [monthly, setMonthly] = useState(profile.savings);
+      const [curAge, setCurAge] = useState(profile.age);
+      const [retAge, setRetAge] = useState(65);
+      const annualReturn = RISK_RETURNS[profile.risk];
+
+      const projected = useMemo(() => calcProjection(monthly, curAge, retAge, annualReturn), [monthly, curAge, retAge,
+      annualReturn]);
+      const chartData = useMemo(() => getChartData(monthly, curAge, retAge, annualReturn), [monthly, curAge, retAge,
+      annualReturn]);
+
+      const ChartTooltip = ({ active, payload, label }) => {
+      if (!active || !payload?.length) return null;
+      return (
+      <div className="bg-slate-800 text-white px-3 py-2 rounded-xl text-sm">
+        <p className="font-bold">{label}</p>
+        <p className="text-emerald-400 font-mono">{fmtCompact(payload[0].value)}</p>
+      </div>
+      );
+      };
+
+      const sliders = [
+      { label: "Aporte mensual", display: fmt(monthly), min: 50, max: 5000, step: 50, val: monthly, set: setMonthly },
+      { label: "Edad actual", display: `${curAge} años`, min: 18, max: 55, step: 1, val: curAge, set: setCurAge },
+      { label: "Edad de retiro", display: `${retAge} años`, min: Math.max(curAge + 5, 45), max: 75, step: 1, val:
+      retAge, set: setRetAge },
+      ];
+
+      return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <TopBar title="Simulador" />
+        <div className="flex-1 px-5 py-4 flex flex-col gap-4">
+
+          {/* Motivation */}
+          <div className="bg-slate-800 rounded-3xl p-5 text-center">
+            <p className="text-white font-semibold text-sm leading-relaxed">{getMotivation(projected, monthly)}</p>
+            <p className="text-slate-400 text-xs mt-2">Tasa: {annualReturn}% anual · Interés compuesto</p>
+          </div>
+
+          {/* Big number */}
+          <Card className="text-center">
+            <p className="text-slate-400 text-sm mb-1">Capital proyectado al retiro</p>
+            <p className="font-bold text-emerald-600 font-mono" style={{ fontSize: 44 }}>{fmtCompact(projected)}</p>
+            <p className="text-slate-400 text-xs mt-1">a los {retAge} años</p>
+          </Card>
+
+          {/* Chart */}
+          <Card className="!p-4">
+            <p className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Crecimiento proyectado</p>
+            <ResponsiveContainer width="100%" height={150}>
+              <AreaChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id="emeraldGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="age" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="amount" stroke="#10B981" strokeWidth={2.5} fill="url(#emeraldGrad)"
+                  dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Sliders */}
+          <Card>
+            <p className="text-sm font-bold text-slate-700 mb-4">Ajusta tu simulación</p>
+            <div className="flex flex-col gap-5">
+              {sliders.map(({ label, display, min, max, step, val, set }) => (
+              <div key={label}>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-slate-500">{label}</span>
+                  <span className="text-sm font-bold text-emerald-600 font-mono">{display}</span>
+                </div>
+                <input type="range" min={min} max={max} step={step} value={val} onChange={e=> set(+e.target.value)}
+                className="w-full" style={{ accentColor: "#10B981" }} />
+              </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Disclaimer */}
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+            <p className="text-amber-700 text-xs leading-relaxed">
+              ⚠️ Simulación educativa. Los retornos reales varían y no están garantizados. Tasa según tu perfil de
+              riesgo: {annualReturn}% anual.
+            </p>
+          </div>
+
+          <div className="h-24" />
+        </div>
+      </div>
+      );
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // EDUCATION
+      // ═══════════════════════════════════════════════════════
+      function Education({ progress, onComplete }) {
+      const [cat, setCat] = useState("all");
+      const [lessonId, setLessonId] = useState(null);
+      const [quizStep, setQuizStep] = useState(null); // null | "quiz" | "result"
+      const [selected, setSelected] = useState(null);
+
+      const doneCount = Object.values(progress).filter(Boolean).length;
+      const filtered = cat === "all" ? LESSONS : LESSONS.filter(l => l.category === cat);
+      const lesson = LESSONS.find(l => l.id === lessonId);
+
+      const closeLesson = () => { setLessonId(null); setQuizStep(null); setSelected(null); };
+
+      // Lesson detail view
+      if (lessonId && lesson) {
+      const isDone = progress[lesson.id];
+      const { color, label } = CAT_META[lesson.category];
+      const isCorrect = quizStep === "result" && lesson.quiz.options[selected]?.correct;
+
+      return (
+      <div className="flex flex-col min-h-screen bg-white">
+        <TopBar title={label} back onBack={closeLesson} right={<Badge color={color}>{label}</Badge>} />
+          <div className="flex-1 px-5 py-4">
+            <div className="flex items-center gap-3 mb-5">
+              <span style={{ fontSize: 36 }}>{lesson.icon}</span>
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 leading-tight">{lesson.title}</h2>
+                <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
+                  <Clock size={12} /> {lesson.duration} min
+                </p>
+              </div>
+            </div>
+
+            {/* Content */}
+            {!quizStep && (
+            <div className="flex flex-col gap-4 mb-6">
+              {lesson.content.map((b, i) =>
+              b.type === "text"
+              ? <p key={i} className="text-slate-600 leading-relaxed text-sm">{b.text}</p>
+              : <div key={i} className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                <p className="text-xs font-bold text-emerald-600 mb-1 uppercase tracking-wider">Dato clave</p>
+                <p className="text-emerald-800 font-semibold text-sm">{b.text}</p>
+              </div>
+              )}
+              {isDone
+              ? <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
+                <Check size={18} className="text-emerald-600 shrink-0" />
+                <p className="text-emerald-700 font-semibold text-sm">Lección completada ✓</p>
+              </div>
+              : <Btn onClick={()=> setQuizStep("quiz")} fullWidth className="mt-2">Hacer el quiz →</Btn>
+              }
+            </div>
+            )}
+
+            {/* Quiz */}
+            {quizStep === "quiz" && (
+            <div className="flex flex-col gap-3">
+              <div className="bg-slate-800 rounded-2xl p-5 mb-2">
+                <p className="text-white font-semibold text-sm">{lesson.quiz.question}</p>
+              </div>
+              {lesson.quiz.options.map((o, i) => (
+              <button key={i} onClick={()=> setSelected(i)}
+                className={`p-4 rounded-2xl border-2 text-left transition-all ${selected === i ? "border-emerald-500
+                bg-emerald-50" : "border-slate-100 bg-slate-50"}`}>
+                <p className={`font-semibold text-sm ${selected===i ? "text-emerald-700" : "text-slate-700" }`}>{o.text}
+                </p>
+              </button>
+              ))}
+              {selected !== null && (
+              <Btn onClick={()=> setQuizStep("result")} fullWidth className="mt-2">Ver resultado</Btn>
+              )}
+            </div>
+            )}
+
+            {/* Result */}
+            {quizStep === "result" && (
+            <div className="flex flex-col gap-4">
+              <div className={`rounded-2xl p-5 ${isCorrect ? "bg-emerald-50 border border-emerald-200"
+                : "bg-red-50 border border-red-200" }`}>
+                <p className="text-2xl mb-2">{isCorrect ? "🎉" : "😅"}</p>
+                <p className={`font-bold mb-2 ${isCorrect ? "text-emerald-700" : "text-red-700" }`}>
+                  {isCorrect ? "¡Correcto!" : "No exactamente…"}
+                </p>
+                <p className={`text-sm ${isCorrect ? "text-emerald-600" : "text-red-600" }`}>
+                  {lesson.quiz.explanation}
+                </p>
+              </div>
+              {isCorrect && !isDone
+              ? <Btn onClick={()=> { onComplete(lesson.id); closeLesson(); }} fullWidth>Completar lección ✨</Btn>
+              : !isCorrect &&
+              <Btn onClick={()=> { setQuizStep("quiz"); setSelected(null); }} variant="secondary" fullWidth>
+                Intentar de nuevo
+              </Btn>
+              }
+            </div>
+            )}
+          </div>
+          <div className="h-8" />
+      </div>
+      );
+      }
+
+      // Lesson list view
+      const allCategories = [
+      { id: "all", label: "Todos" },
+      ...Object.entries(CAT_META).map(([id, { label }]) => ({ id, label })),
+      ];
+
+      return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <TopBar title="Aprender" />
+        <div className="flex-1 px-5 py-4">
+          {/* Progress card */}
+          <Card className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-bold text-slate-700">Tu progreso</p>
+                <p className="text-xs text-slate-400">{doneCount} de {LESSONS.length} lecciones</p>
+              </div>
+              <div className="w-12 h-12 rounded-full border-4 border-emerald-500 flex items-center justify-center">
+                <span className="text-xs font-bold text-emerald-600">
+                  {Math.round((doneCount / LESSONS.length) * 100)}%
+                </span>
+              </div>
+            </div>
+            <Bar value={(doneCount / LESSONS.length) * 100} />
+          </Card>
+
+          {/* Category pills */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-4" style={{ scrollbarWidth: "none" }}>
+            {allCategories.map(c => (
+            <button key={c.id} onClick={()=> setCat(c.id)}
+              className={`flex-none px-4 py-2 rounded-full text-sm font-bold transition-colors whitespace-nowrap ${cat
+              === c.id ? "bg-emerald-500 text-white" : "bg-white text-slate-500 border border-slate-200"}`}>
+              {c.label}
+            </button>
+            ))}
+          </div>
+
+          {/* Lesson cards */}
+          <div className="flex flex-col gap-3">
+            {filtered.map(l => {
+            const { color, label } = CAT_META[l.category];
+            const done = progress[l.id];
+            return (
+            <Card key={l.id} onClick={()=> setLessonId(l.id)} className="!p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background:
+                  `${color}15`, fontSize: 22 }}>
+                  {l.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge color={color}>{label}</Badge>
+                    {done &&
+                    <Check size={12} className="text-emerald-500" />}
+                  </div>
+                  <p className="font-bold text-slate-800 text-sm leading-tight truncate">{l.title}</p>
+                  <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                    <Clock size={10} /> {l.duration} min
+                  </p>
+                </div>
+                <ChevronRight size={16} className="text-slate-300 shrink-0" />
+              </div>
+            </Card>
+            );
+            })}
+          </div>
+          <div className="h-24" />
+        </div>
+      </div>
+      );
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // GOALS
+      // ═══════════════════════════════════════════════════════
+      function Goals({ goals, contributions, onAddGoal, onAddContrib }) {
+      const [view, setView] = useState("list");
+      const [form, setForm] = useState({ name: "", target: "", color: "#10B981" });
+      const [contribGoal, setContribGoal] = useState(null);
+      const [amount, setAmount] = useState("");
+
+      const COLORS = ["#10B981", "#6366F1", "#F59E0B", "#EC4899", "#3B82F6"];
+
+      // Create goal view
+      if (view === "create") return (
+      <div className="flex flex-col min-h-screen bg-white">
+        <TopBar title="Nueva meta" back onBack={()=> setView("list")} />
+          <div className="flex-1 px-5 py-4 flex flex-col gap-4">
+            <Field label="Nombre de la meta" value={form.name} onChange={e=> setForm(f => ({ ...f, name: e.target.value
+              }))} placeholder="Ej: Fondo de jubilación" />
+              <Field label="Monto objetivo" prefix="S/" type="number" value={form.target} onChange={e=> setForm(f => ({
+                ...f, target: e.target.value }))} placeholder="50000" />
+                <div>
+                  <p className="text-sm font-semibold text-slate-500 mb-2">Color</p>
+                  <div className="flex gap-3">
+                    {COLORS.map(c => (
+                    <button key={c} onClick={()=> setForm(f => ({ ...f, color: c }))}
+                      className="w-10 h-10 rounded-full transition-all"
+                      style={{ background: c, outline: `3px solid ${form.color === c ? c : "transparent"}`,
+                      outlineOffset: 2 }} />
+                      ))}
+                  </div>
+                </div>
+                <Btn onClick={()=> {
+                  if (!form.name || !form.target) return;
+                  onAddGoal({ id: `g${Date.now()}`, name: form.name, target: +form.target, color: form.color,
+                  isRetirement: goals.length === 0 });
+                  setForm({ name: "", target: "", color: "#10B981" });
+                  setView("list");
+                  }}
+                  fullWidth
+                  disabled={!form.name || !form.target}
+                  >
+                  Crear meta
+                </Btn>
+          </div>
+      </div>
+      );
+
+      // Contribute view
+      if (view === "contribute" && contribGoal) {
+      const g = goals.find(x => x.id === contribGoal);
+      return (
+      <div className="flex flex-col min-h-screen bg-white">
+        <TopBar title="Registrar aporte" back onBack={()=> { setView("list"); setAmount(""); }} />
+          <div className="flex-1 px-5 py-6 flex flex-col gap-4">
+            <div className="rounded-2xl p-4" style={{ background: `${g.color}12`, border: `1px solid ${g.color}30` }}>
+              <p className="font-bold text-slate-700">{g.name}</p>
+              <p className="text-sm text-slate-400">Meta: {fmt(g.target)}</p>
+            </div>
+            <Field label="Monto del aporte" prefix="S/" type="number" value={amount} onChange={e=>
+              setAmount(e.target.value)} placeholder="200" />
+              <div className="flex gap-2 flex-wrap">
+                {[50, 100, 200, 500].map(v => (
+                <button key={v} onClick={()=> setAmount(String(v))}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${+amount === v ?
+                  "bg-emerald-500 text-white border-emerald-500" : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                  S/{v}
+                </button>
+                ))}
+              </div>
+              <Btn onClick={()=> {
+                if (!amount || +amount <= 0) return; onAddContrib({ id: `c${Date.now()}`, goalId: contribGoal, amount:
+                  +amount, date: new Date().toLocaleDateString("es-PE") }); setView("list"); setAmount(""); }} fullWidth
+                  disabled={!amount || +amount <=0}>
+                  Registrar aporte ✓
+              </Btn>
+              <p className="text-center text-xs text-slate-400">Aporte simulado. No se realiza ninguna transferencia
+                real.</p>
+          </div>
+      </div>
+      );
+      }
+
+      // List view
+      return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <TopBar title="Mis metas" right={ <Btn onClick={()=> setView("create")} size="sm" variant="secondary"
+          className="!py-2 !px-3">
+          <Plus size={15} /> Nueva
+          </Btn>
+          }
+          />
+          <div className="flex-1 px-5 py-4">
+            {goals.length === 0
+            ? <EmptyState icon="🎯" title="Sin metas aún"
+              desc="Crea tu primera meta financiera y empieza a construir tu futuro." cta="Crear meta" onCta={()=>
+              setView("create")} />
+              : (
+              <div className="flex flex-col gap-4">
+                {goals.map(g => {
+                const gContribs = contributions.filter(c => c.goalId === g.id);
+                const current = gContribs.reduce((s, c) => s + c.amount, 0);
+                const pct = Math.min(100, (current / g.target) * 100);
+                return (
+                <Card key={g.id}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h3 className="font-bold text-slate-800">{g.name}</h3>
+                        {g.isRetirement && <Badge color="#10B981">Principal</Badge>}
+                      </div>
+                      <p className="text-xs text-slate-400">
+                        Meta: <span className="font-bold text-slate-600 font-mono">{fmt(g.target)}</span>
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full" style={{ background: `${g.color}20`, border: `2px solid
+                      ${g.color}` }} />
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl font-bold font-mono text-slate-800">{fmt(current)}</span>
+                    <span className="text-sm font-bold" style={{ color: g.color }}>{pct.toFixed(1)}%</span>
+                  </div>
+                  <Bar value={pct} color={g.color} h={6} />
+                  <div className="mt-4">
+                    <Btn onClick={()=> { setContribGoal(g.id); setView("contribute"); }}
+                      size="sm" variant="secondary" fullWidth
+                      >
+                      + Registrar aporte
+                    </Btn>
+                  </div>
+                  {gContribs.length > 0 && (
+                  <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-100">
+                    {gContribs.length} aportes · último: {gContribs[gContribs.length - 1].date}
+                  </p>
+                  )}
+                </Card>
+                );
+                })}
+              </div>
+              )
+              }
+              <div className="h-24" />
+          </div>
+      </div>
+      );
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // PROFILE
+      // ═══════════════════════════════════════════════════════
+      function Profile({ profile, contributions, onUpdate, onLogout }) {
+      const [editing, setEditing] = useState(false);
+      const [showHist, setShowHist] = useState(false);
+      const [form, setForm] = useState({ ...profile });
+
+      const riskL = { low: "Conservador", medium: "Moderado", high: "Agresivo" };
+      const knowL = { beginner: "Principiante", intermediate: "Intermedio", advanced: "Avanzado" };
+
+      // History view
+      if (showHist) return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <TopBar title="Historial de aportes" back onBack={()=> setShowHist(false)} />
+          <div className="flex-1 px-5 py-4">
+            {contributions.length === 0
+            ?
+            <EmptyState icon="📋" title="Sin aportes aún" desc="Tus aportes registrados aparecerán aquí." />
+            : (
+            <div className="flex flex-col gap-3">
+              {[...contributions].reverse().map(c => (
+              <Card key={c.id} className="!p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                  <DollarSign size={16} className="text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800 font-mono">{fmt(c.amount)}</p>
+                  <p className="text-xs text-slate-400">{c.date}</p>
+                </div>
+              </Card>
+              ))}
+            </div>
+            )
+            }
+            <div className="h-24" />
+          </div>
+      </div>
+      );
+
+      // Edit view
+      if (editing) return (
+      <div className="flex flex-col min-h-screen bg-white">
+        <TopBar title="Editar perfil" back onBack={()=> setEditing(false)} />
+          <div className="flex-1 px-5 py-4 flex flex-col gap-4">
+            <Field label="Nombre" value={form.name} onChange={e=> setForm(f => ({ ...f, name: e.target.value }))} />
+              <Field label="Edad" type="number" value={form.age} onChange={e=> setForm(f => ({ ...f, age:
+                +e.target.value }))} />
+                <Field label="Ingreso mensual" prefix="S/" type="number" value={form.income} onChange={e=> setForm(f =>
+                  ({ ...f, income: +e.target.value }))} />
+                  <Field label="Ahorro mensual" prefix="S/" type="number" value={form.savings} onChange={e=> setForm(f
+                    => ({ ...f, savings: +e.target.value }))} />
+                    <Btn onClick={()=> { onUpdate(form); setEditing(false); }} fullWidth>Guardar cambios</Btn>
+          </div>
+      </div>
+      );
+
+      // Main profile view
+      return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <TopBar title="Mi perfil" right={ <Btn onClick={()=> setEditing(true)} size="sm" variant="ghost"
+          className="!py-2 !px-3">
+          <Edit2 size={14} /> Editar
+          </Btn>
+          }
+          />
+          <div className="flex-1 px-5 py-4">
+            {/* Avatar */}
+            <Card className="flex items-center gap-4 mb-4">
+              <div
+                className="w-16 h-16 rounded-3xl bg-emerald-500 flex items-center justify-center text-2xl font-bold text-white shrink-0">
+                {profile.name?.charAt(0)?.toUpperCase()}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">{profile.name}</h2>
+                <p className="text-slate-400 text-sm">{profile.email}</p>
+              </div>
+            </Card>
+
+            {/* Data */}
+            <Card className="mb-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Datos financieros</p>
+              {[
+              ["Edad", `${profile.age} años` ],
+              ["Ingreso mensual", fmt(profile.income) ],
+              ["Ahorro mensual", fmt(profile.savings) ],
+              ["Perfil de riesgo", riskL[profile.risk] ],
+              ["Nivel financiero", knowL[profile.knowledge] ],
+              ].map(([k, v]) => (
+              <div key={k} className="flex justify-between py-3 border-b border-slate-50 last:border-0">
+                <span className="text-slate-400 text-sm">{k}</span>
+                <span className="font-bold text-slate-800 text-sm font-mono">{v}</span>
+              </div>
+              ))}
+            </Card>
+
+            {/* Options */}
+            <div className="flex flex-col gap-2 mb-4">
+              {[
+              { icon: "📋", label: "Historial de aportes", action: () => setShowHist(true) },
+              { icon: "🔔", label: "Notificaciones", action: () => {} },
+              { icon: "❓", label: "Centro de ayuda", action: () => {} },
+              ].map(({ icon, label, action }) => (
+              <Card key={label} className="!p-4 flex items-center gap-3" onClick={action}>
+                <span style={{ fontSize: 18 }}>{icon}</span>
+                <span className="flex-1 text-slate-700 font-semibold text-sm">{label}</span>
+                <ChevronRight size={16} className="text-slate-300" />
+              </Card>
+              ))}
+            </div>
+
+            <Btn onClick={onLogout} variant="danger" fullWidth>
+              <LogOut size={15} /> Cerrar sesión
+            </Btn>
+
+            <p className="text-center text-xs text-slate-300 mt-5">Nido MVP · v1.0 · Datos simulados</p>
+            <div className="h-24" />
+          </div>
+      </div>
+      );
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // APP ROOT
+      // ═══════════════════════════════════════════════════════
+      export default function App() {
+      const [screen, setScreen] = useState("splash"); // splash | auth | onboarding | app
+      const [authMode, setAuthMode] = useState("login");
+      const [tab, setTab] = useState("dashboard");
+      const [user, setUser] = useState(null);
+      const [profile, setProfile] = useState(null);
+      const [goals, setGoals] = useState([]);
+      const [contribs, setContribs] = useState([]);
+      const [lsnProg, setLsnProg] = useState({});
+
+      // Inject DM Sans font
+      useEffect(() => {
+      if (document.head.querySelector("[data-nido-font]")) return;
+      const style = document.createElement("style");
+      style.setAttribute("data-nido-font", "1");
+      style.textContent = `
+      @import
+      url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+      #nido-root * { font-family: 'DM Sans', sans-serif !important; -webkit-tap-highlight-color: transparent; }
+      #nido-root .font-mono { font-family: 'DM Mono', monospace !important; }
+      #nido-root input[type=range] { -webkit-appearance: none; height: 4px; background: #e2e8f0; border-radius: 8px;
+      cursor: pointer; outline: none; width: 100%; }
+      #nido-root input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px;
+      border-radius: 50%; background: #10B981; box-shadow: 0 2px 8px rgba(16,185,129,.4); }
+      #nido-root input::placeholder { color: #cbd5e1; }
+      `;
+      document.head.appendChild(style);
+      }, []);
+
+      const handleAuthSuccess = (u) => { setUser(u); setScreen("onboarding"); };
+
+      const handleOnboardingComplete = (data) => {
+      const p = { ...data, name: user.name, email: user.email };
+      setProfile(p);
+      const projected = calcProjection(data.savings, data.age, 65, RISK_RETURNS[data.risk]);
+      setGoals([{
+      id: "retirement-main",
+      name: "Mi jubilación",
+      target: Math.round(projected),
+      color: "#10B981",
+      isRetirement: true,
+      }]);
+      setScreen("app");
+      setTab("dashboard");
+      };
+
+      const reset = () => {
+      setUser(null); setProfile(null); setGoals([]); setContribs([]); setLsnProg({});
+      setScreen("splash"); setTab("dashboard");
+      };
+
+      return (
+      <div id="nido-root" className="max-w-sm mx-auto min-h-screen bg-white overflow-hidden relative">
+        {screen === "splash" && (
+        <Splash onLogin={()=> { setAuthMode("login"); setScreen("auth"); }}
+          onRegister={() => { setAuthMode("register"); setScreen("auth"); }}
+          />
+          )}
+          {screen === "auth" && (
+          <Auth mode={authMode} onSuccess={handleAuthSuccess} onSwitch={()=> setAuthMode(m => m === "login" ? "register"
+            : "login")}
+            onBack={() => setScreen("splash")}
+            />
+            )}
+            {screen === "onboarding" && user && (
+            <Onboarding onComplete={handleOnboardingComplete} />
+            )}
+            {screen === "app" && profile && (
+            <>
+              {tab === "dashboard" && (
+              <Dashboard profile={profile} contributions={contribs} onNav={setTab} />
+              )}
+              {tab === "simulator" && (
+              <Simulator profile={profile} />
+              )}
+              {tab === "education" && (
+              <Education progress={lsnProg} onComplete={id=> setLsnProg(p => ({ ...p, [id]: true }))} />
+                )}
+                {tab === "goals" && (
+                <Goals goals={goals} contributions={contribs} onAddGoal={g=> setGoals(gs => [...gs, g])}
+                  onAddContrib={c => setContribs(cs => [...cs, c])}
+                  />
+                  )}
+                  {tab === "profile" && (
+                  <Profile profile={profile} contributions={contribs} onUpdate={p=> setProfile(prev => ({ ...prev, ...p
+                    }))}
+                    onLogout={reset}
+                    />
+                    )}
+                    <BottomNav active={tab} onChange={setTab} />
+            </>
+            )}
+      </div>
+      );
+      }

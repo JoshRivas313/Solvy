@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: solvy-postgres
+    environment:
+      POSTGRES_DB: solvy_db
+      POSTGRES_USER: solvy_user
+      POSTGRES_PASSWORD: solvy_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - solvy-network
+
+  backend:
+    build: ./backend
+    container_name: solvy-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/solvy_db
+      SPRING_DATASOURCE_USERNAME: solvy_user
+      SPRING_DATASOURCE_PASSWORD: solvy_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - postgres
+    networks:
+      - solvy-network
+
+  frontend:
+    build: ./frontend
+    container_name: solvy-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8080/api
+    depends_on:
+      - backend
+    networks:
+      - solvy-network
+
+networks:
+  solvy-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
